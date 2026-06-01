@@ -1,0 +1,7 @@
+nazev,a,b,c,d,popis
+mali,0,0,10,16,Detsky vek s plynulym prechodem k mlademu veku
+mladi,12,20,28,40,Mlady vek s prekryvem s detskym a strednim vekem
+stredni,30,42,50,60,Stredni vek s plynulym nastupem i ustupem
+starsi,50,60,67,75,Starsi vek jako prechod mezi strednim a starym vekem
+stari,65,75,82,90,Stary vek s prekryvem se starsim a nejstarsim vekem
+nejstarsi,80,90,100,100,Nejvyssi vekova kategorie s plnou prislusnosti od 90 let

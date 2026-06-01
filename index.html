@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fuzzy věkové rozdělení</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1d232b;
+      --muted: #5e6978;
+      --line: #d9dee7;
+      --grid: #edf0f4;
+      --accent: #284b63;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.45;
+    }
+
+    header {
+      background: var(--accent);
+      color: white;
+      padding: 22px 28px;
+    }
+
+    h1, h2 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 20px auto 36px;
+      display: grid;
+      gap: 16px;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .assignment {
+      display: grid;
+      gap: 8px;
+    }
+
+    .assignment p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .slider-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .age-value {
+      min-width: 124px;
+      text-align: right;
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .chart-wrap {
+      overflow: hidden;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      align-items: center;
+      margin: 2px 0 10px;
+      padding: 10px 12px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    svg {
+      width: 100%;
+      min-width: 0;
+      height: auto;
+      display: block;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    .current-table, .full-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child {
+      text-align: left;
+    }
+
+    th {
+      background: #f0f3f7;
+      font-weight: 700;
+    }
+
+    .value-cell {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .badge {
+      display: inline-block;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      margin-right: 7px;
+      vertical-align: -1px;
+    }
+
+    .formula {
+      background: #f4f6f8;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow-x: auto;
+    }
+
+    .table-scroll {
+      max-height: 420px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+
+    @media (max-width: 860px) {
+      header {
+        padding: 18px 16px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .layout, .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .age-value {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Fuzzy věkové rozdělení</h1>
+  </header>
+
+  <main>
+    <section>
+      <div class="controls">
+        <div class="slider-row">
+          <label for="ageSlider"><strong>Zvolený věk</strong></label>
+          <input id="ageSlider" type="range" min="0" max="100" value="35" step="1">
+        </div>
+        <div class="age-value"><span id="ageValue">35</span> let</div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section>
+        <h2>Graf funkcí příslušnosti</h2>
+        <div id="chartLegend" class="chart-legend" aria-label="Legenda grafu"></div>
+        <div class="chart-wrap">
+          <svg id="chart" viewBox="0 0 980 440" role="img" aria-label="Graf fuzzy věkových množin"></svg>
+        </div>
+      </section>
+
+      <section>
+        <h2>Příslušnost pro zvolený věk</h2>
+        <table class="current-table">
+          <thead>
+            <tr>
+              <th>Fuzzy množina</th>
+              <th>μ</th>
+            </tr>
+          </thead>
+          <tbody id="currentRows"></tbody>
+        </table>
+      </section>
+    </div>
+
+    <section>
+      <h2>Použitá funkce příslušnosti</h2>
+      <div class="formula">
+        μ(x) = 0 mimo interval &lt;a, d&gt;<br>
+        μ(x) roste lineárně z 0 na 1 v intervalu &lt;a, b&gt;<br>
+        μ(x) = 1 v intervalu &lt;b, c&gt;<br>
+        μ(x) klesá lineárně z 1 na 0 v intervalu &lt;c, d&gt;
+      </div>
+    </section>
+
+    <section>
+      <h2>Tabulka hodnot po 5 letech</h2>
+      <div class="table-scroll">
+        <table class="full-table">
+          <thead id="fullTableHead"></thead>
+          <tbody id="fullTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const sets = [
+      { name: "malí", color: "#d1495b", a: 0, b: 0, c: 10, d: 16 },
+      { name: "mladí", color: "#ed9b40", a: 12, b: 20, c: 28, d: 40 },
+      { name: "střední", color: "#3a7d44", a: 30, b: 42, c: 50, d: 60 },
+      { name: "starší", color: "#00798c", a: 50, b: 60, c: 67, d: 75 },
+      { name: "staří", color: "#5e548e", a: 65, b: 75, c: 82, d: 90 },
+      { name: "nejstarší", color: "#8f2d56", a: 80, b: 90, c: 100, d: 100 }
+    ];
+
+    const chart = document.getElementById("chart");
+    const chartLegend = document.getElementById("chartLegend");
+    const slider = document.getElementById("ageSlider");
+    const ageValue = document.getElementById("ageValue");
+    const currentRows = document.getElementById("currentRows");
+    const fullTableHead = document.getElementById("fullTableHead");
+    const fullTableBody = document.getElementById("fullTableBody");
+
+    const svg = {
+      width: 980,
+      height: 440,
+      left: 62,
+      right: 24,
+      top: 42,
+      bottom: 58
+    };
+    svg.innerWidth = svg.width - svg.left - svg.right;
+    svg.innerHeight = svg.height - svg.top - svg.bottom;
+
+    function membership(x, set) {
+      if (x < set.a || x > set.d) return 0;
+      if (x >= set.b && x <= set.c) return 1;
+      if (x > set.a && x < set.b) return (x - set.a) / (set.b - set.a);
+      if (x > set.c && x < set.d) return (set.d - x) / (set.d - set.c);
+      if (set.a === set.b && x === set.a) return 1;
+      if (set.c === set.d && x === set.d) return 1;
+      return 0;
+    }
+
+    function format(value) {
+      return value.toFixed(2);
+    }
+
+    function xToPixel(age) {
+      return svg.left + (age / 100) * svg.innerWidth;
+    }
+
+    function yToPixel(value) {
+      return svg.top + (1 - value) * svg.innerHeight;
+    }
+
+    function createSvgElement(name, attrs) {
+      const element = document.createElementNS("http://www.w3.org/2000/svg", name);
+      for (const [key, value] of Object.entries(attrs)) {
+        element.setAttribute(key, value);
+      }
+      return element;
+    }
+
+    function drawChart(age) {
+      chart.innerHTML = "";
+
+      for (let i = 0; i <= 10; i++) {
+        const ageTick = i * 10;
+        const x = xToPixel(ageTick);
+        chart.appendChild(createSvgElement("line", {
+          x1: x, y1: svg.top, x2: x, y2: svg.top + svg.innerHeight,
+          stroke: "#edf0f4", "stroke-width": "1"
+        }));
+        chart.appendChild(createSvgElement("text", {
+          x, y: svg.top + svg.innerHeight + 28,
+          "text-anchor": "middle", "font-size": "12", fill: "#4d5662"
+        })).textContent = ageTick;
+      }
+
+      for (let i = 0; i <= 4; i++) {
+        const value = i / 4;
+        const y = yToPixel(value);
+        chart.appendChild(createSvgElement("line", {
+          x1: svg.left, y1: y, x2: svg.left + svg.innerWidth, y2: y,
+          stroke: "#edf0f4", "stroke-width": "1"
+        }));
+        chart.appendChild(createSvgElement("text", {
+          x: svg.left - 12, y: y + 4,
+          "text-anchor": "end", "font-size": "12", fill: "#4d5662"
+        })).textContent = value.toFixed(2);
+      }
+
+      chart.appendChild(createSvgElement("line", {
+        x1: svg.left, y1: svg.top + svg.innerHeight,
+        x2: svg.left + svg.innerWidth, y2: svg.top + svg.innerHeight,
+        stroke: "#1d232b", "stroke-width": "2"
+      }));
+      chart.appendChild(createSvgElement("line", {
+        x1: svg.left, y1: svg.top,
+        x2: svg.left, y2: svg.top + svg.innerHeight,
+        stroke: "#1d232b", "stroke-width": "2"
+      }));
+
+      chart.appendChild(createSvgElement("text", {
+        x: svg.left + svg.innerWidth,
+        y: svg.top + svg.innerHeight + 46,
+        "text-anchor": "end", "font-size": "13", fill: "#1d232b"
+      })).textContent = "věk";
+      chart.appendChild(createSvgElement("text", {
+        x: svg.left - 38,
+        y: svg.top - 18,
+        "text-anchor": "start", "font-size": "13", fill: "#1d232b", "font-weight": "700"
+      })).textContent = "μ";
+
+      for (const set of sets) {
+        const points = [];
+        for (let x = 0; x <= 100; x++) {
+          points.push(`${xToPixel(x)},${yToPixel(membership(x, set))}`);
+        }
+        chart.appendChild(createSvgElement("polyline", {
+          points: points.join(" "),
+          fill: "none",
+          stroke: set.color,
+          "stroke-width": "3",
+          "stroke-linejoin": "round",
+          "stroke-linecap": "round"
+        }));
+      }
+
+      const selectedX = xToPixel(age);
+      chart.appendChild(createSvgElement("line", {
+        x1: selectedX, y1: svg.top,
+        x2: selectedX, y2: svg.top + svg.innerHeight,
+        stroke: "#111827", "stroke-width": "2", "stroke-dasharray": "6 5"
+      }));
+
+      for (const set of sets) {
+        chart.appendChild(createSvgElement("circle", {
+          cx: selectedX,
+          cy: yToPixel(membership(age, set)),
+          r: "5",
+          fill: "white",
+          stroke: set.color,
+          "stroke-width": "3"
+        }));
+      }
+    }
+
+    function drawLegend() {
+      chartLegend.innerHTML = "";
+      for (const set of sets) {
+        const item = document.createElement("span");
+        item.className = "legend-item";
+        item.innerHTML = `<span class="badge" style="background:${set.color}"></span>${set.name}`;
+        chartLegend.appendChild(item);
+      }
+    }
+
+    function drawCurrentTable(age) {
+      currentRows.innerHTML = "";
+      const values = sets.map(set => ({ set, value: membership(age, set) }));
+      for (const row of values) {
+        const tr = document.createElement("tr");
+        const name = document.createElement("td");
+        const value = document.createElement("td");
+        value.className = "value-cell";
+        name.innerHTML = `<span class="badge" style="background:${row.set.color}"></span>${row.set.name}`;
+        value.textContent = format(row.value);
+        tr.append(name, value);
+        currentRows.appendChild(tr);
+      }
+    }
+
+    function drawFullTable() {
+      const header = document.createElement("tr");
+      const ageHeader = document.createElement("th");
+      ageHeader.textContent = "věk";
+      header.appendChild(ageHeader);
+      for (const set of sets) {
+        const th = document.createElement("th");
+        th.innerHTML = `<span class="badge" style="background:${set.color}"></span>${set.name}`;
+        header.appendChild(th);
+      }
+      fullTableHead.innerHTML = "";
+      fullTableHead.appendChild(header);
+
+      fullTableBody.innerHTML = "";
+      for (let age = 0; age <= 100; age += 5) {
+        const tr = document.createElement("tr");
+        const ageCell = document.createElement("td");
+        ageCell.textContent = age;
+        tr.appendChild(ageCell);
+        for (const set of sets) {
+          const td = document.createElement("td");
+          td.className = "value-cell";
+          td.textContent = format(membership(age, set));
+          tr.appendChild(td);
+        }
+        fullTableBody.appendChild(tr);
+      }
+    }
+
+    function update() {
+      const age = Number(slider.value);
+      ageValue.textContent = age;
+      drawChart(age);
+      drawCurrentTable(age);
+    }
+
+    slider.addEventListener("input", update);
+    drawLegend();
+    drawFullTable();
+    update();
+  </script>
+</body>
+</html>
