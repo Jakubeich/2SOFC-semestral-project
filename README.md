@@ -1,46 +1,123 @@
 # Fuzzy věkové rozdělení
 
-Jednodušší semestrální projekt do předmětu **Základy softcomputingu 1**. Projekt vychází z korespondenčního úkolu ve skriptech na straně 31:
+Semestrální projekt k zápočtu z předmětu **Základy softcomputingu 1**.
+
+Autor: **Jakub Mitrega**
+
+## Zadání
+
+Projekt vychází z korespondenčního úkolu ze skript, strana 31:
 
 > Popište pomocí fuzzy množiny základní věkové rozdělení, které znají lidé. Jedná se o věkové typy: malí, mladí, střední, starší, staří, nejstarší. Zobrazte tabulkou i graficky.
 
-Tento projekt je jednodušší než evoluční algoritmus i perceptron. Neřeší se zde programování složitého algoritmu, ale návrh fuzzy množin a jejich přehledné zobrazení.
+## Cíl projektu
 
-## Co projekt obsahuje
+Cílem projektu je převést běžné slovní věkové kategorie do podoby fuzzy množin. Věkové pojmy jako `mladí`, `střední`, `staří` nebo `nejstarší` nemají v běžném jazyce přesnou hranici. Fuzzy množiny umožňují popsat tyto přechody plynule pomocí stupně příslušnosti v intervalu od `0` do `1`.
 
-- `index.html` - interaktivní tabulka a graf fuzzy věkových množin,
-- `data/fuzzy_mnoziny.csv` - definice použitých fuzzy množin,
-- `docs/semestralni_projekt.md` - hotové vypracování,
-- `docs/obhajoba_prirucka.md` - stručné vysvětlení k obhajobě,
-- `docs/pruvodce_ukazkou_aplikace_a_pojmy.md` - průvodce ukázkou webové aplikace a slovníček pojmů,
-- `docs/scenar_obhajoby_krok_za_krokem.md` - scénář, podle kterého lze projekt odprezentovat.
+Výsledkem je:
 
-## Spuštění
+- návrh fuzzy množin pro šest věkových kategorií,
+- tabulka parametrů použitých množin,
+- graf funkcí příslušnosti,
+- interaktivní webová aplikace pro výpočet příslušnosti zvoleného věku.
 
-Stačí otevřít soubor:
+## Spuštění aplikace
 
-```text
-index.html
+Aplikace je vytvořená jako statická webová stránka. Není potřeba instalovat žádné závislosti.
+
+Lokální spuštění:
+
+1. Otevřít soubor `index.html` v prohlížeči.
+2. Posuvníkem `Zvolený věk` měnit vstupní věk.
+3. Sledovat změny v grafu a tabulce příslušnosti.
+
+Volitelně lze spustit lokální server:
+
+```bash
+python3 -m http.server 8765
 ```
 
-Není potřeba Maven, Java ani žádný server. Projekt funguje jako obyčejná webová stránka v prohlížeči.
+Potom je aplikace dostupná na adrese:
 
-## Princip
+```text
+http://127.0.0.1:8765/index.html
+```
 
-Klasické množiny by člověka zařadily do jedné pevné kategorie. Fuzzy množiny umožňují, aby člověk patřil do více kategorií současně s různým stupněm příslušnosti.
+## Struktura projektu
 
-Příklad: člověk ve věku 60 let může být částečně **střední** a zároveň hodně **starší**. To odpovídá běžnému lidskému vnímání věku lépe než ostrá hranice.
+```text
+.
+├── index.html
+├── vercel.json
+├── data/
+│   └── fuzzy_mnoziny.csv
+├── docs/
+│   ├── semestralni_projekt.md
+│   ├── obhajoba_prirucka.md
+│   ├── scenar_obhajoby_krok_za_krokem.md
+│   ├── text_obhajoby_15_20_min.md
+│   └── pruvodce_ukazkou_aplikace_a_pojmy.md
+└── prezentace_fuzzy_vekove_rozlozeni.pptx
+```
 
-## Použité věkové typy
+## Použité věkové kategorie
 
-Projekt používá šest fuzzy množin:
+Projekt pracuje s těmito fuzzy množinami:
 
-- malí,
-- mladí,
-- střední,
-- starší,
-- staří,
-- nejstarší.
+- `malí`,
+- `mladí`,
+- `střední`,
+- `starší`,
+- `staří`,
+- `nejstarší`.
 
-Každá množina má lichoběžníkovou funkci příslušnosti. Hodnota `0` znamená, že věk do kategorie nepatří. Hodnota `1` znamená plnou příslušnost. Hodnoty mezi `0` a `1` znamenají částečnou příslušnost.
-# 2SOFC-semestral-project
+Každá množina je popsána lichoběžníkovou funkcí příslušnosti. Funkce vrací hodnotu `μ(x)` pro zvolený věk `x`.
+
+## Interpretace hodnot
+
+- `μ(x) = 0` znamená, že věk do dané kategorie nepatří.
+- `μ(x) = 1` znamená plnou příslušnost.
+- Hodnoty mezi `0` a `1` znamenají částečnou příslušnost.
+
+Příklad: věk `35 let` může mít nenulovou příslušnost ke kategoriím `mladí` i `střední`. To vyjadřuje plynulý přechod mezi dvěma věkovými pojmy.
+
+## Použitá funkce příslušnosti
+
+Pro všechny věkové kategorie je použita lichoběžníková funkce příslušnosti se čtyřmi parametry `a`, `b`, `c`, `d`:
+
+- od `a` do `b` příslušnost roste z `0` na `1`,
+- od `b` do `c` je příslušnost rovna `1`,
+- od `c` do `d` příslušnost klesá z `1` na `0`,
+- mimo interval `<a, d>` je příslušnost rovna `0`.
+
+Tento tvar byl zvolen kvůli jednoduchému výpočtu, přehlednému grafickému zobrazení a srozumitelné interpretaci.
+
+## Nasazení
+
+Projekt je možné nasadit jako statickou stránku například na Vercel.
+
+Při importu repozitáře do Vercelu je vhodné nastavit:
+
+```text
+Framework Preset: Other
+Root Directory: .
+Build Command: prázdné
+Output Directory: .
+Install Command: prázdné
+```
+
+Pokud je tento projekt uložený v nadřazeném repozitáři jako podsložka, nastaví se ve Vercelu `Root Directory` na:
+
+```text
+fuzzy-vekove-rozlozeni
+```
+
+## Dokumentace k obhajobě
+
+Ve složce `docs/` jsou připravené podpůrné materiály:
+
+- `semestralni_projekt.md` - písemné vypracování projektu,
+- `obhajoba_prirucka.md` - stručná příručka k obhajobě,
+- `scenar_obhajoby_krok_za_krokem.md` - scénář obhajoby,
+- `text_obhajoby_15_20_min.md` - delší text k prezentaci,
+- `pruvodce_ukazkou_aplikace_a_pojmy.md` - průvodce ukázkou aplikace a slovníček pojmů.
